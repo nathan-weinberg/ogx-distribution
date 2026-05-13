@@ -430,12 +430,6 @@ def generate_containerfile(ogx_install):
         "{ogx_install_source}", ogx_runs
     )
 
-    # Remove blank lines from empty substitutions
-    containerfile_content = (
-        "\n".join(line for line in containerfile_content.splitlines() if line.strip())
-        + "\n"
-    )
-
     with open(output_path, "w") as f:
         f.write(containerfile_content)
 
