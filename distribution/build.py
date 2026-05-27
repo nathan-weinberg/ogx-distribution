@@ -13,6 +13,7 @@ import sys
 import os
 import re
 import shlex
+import tempfile
 from pathlib import Path
 
 from ruamel.yaml import YAML
@@ -271,10 +272,32 @@ def generate_stripped_config():
     print(f"Successfully generated {output_path}")
 
 
+def _resolve_env_defaults(text):
+    """Replace ${env.VAR:=default} and ${env.VAR:+value} templates.
+
+    Pydantic validates build.yaml before env-var substitution, so
+    non-string fields (e.g. integers) must contain plain values.
+    Empty defaults are quoted to avoid YAML null interpretation.
+    """
+
+    def _replace_default(match):
+        default = match.group(1)
+        return f'"{default}"' if default == "" else default
+
+    text = re.sub(r"\$\{env\.[^:}]+:=([^}]*)\}", _replace_default, text)
+    text = re.sub(r"\$\{env\.[^:}]+:\+([^}]*)\}", r'"\1"', text)
+    return text
+
+
 def get_dependencies():
     """Execute the ogx list-deps command and capture dependencies."""
-    cmd = ["ogx", "stack", "list-deps", "distribution/build.yaml"]
+    build_yaml = Path("distribution/build.yaml")
+    resolved = _resolve_env_defaults(build_yaml.read_text())
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as tmp:
+        tmp.write(resolved)
+        tmp_path = tmp.name
     try:
+        cmd = ["ogx", "stack", "list-deps", tmp_path]
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
         # Categorize and sort different types of pip install commands
         standard_deps = []
@@ -390,6 +413,8 @@ def get_dependencies():
         print(f"Command output: {e.output}")
         print(f"Command stderr: {e.stderr}")
         sys.exit(1)
+    finally:
+        os.unlink(tmp_path)
 
 
 def generate_install_deps_script(dependencies):
