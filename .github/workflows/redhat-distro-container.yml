@@ -60,7 +60,6 @@ jobs:
     env:
       VERTEX_AI_PROJECT: ${{ secrets.VERTEX_AI_PROJECT }}
       GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-      GCP_GEMINI_SERVICE_ACCOUNT: ${{ secrets.GCP_GEMINI_SERVICE_ACCOUNT }}
       GEMINI_AI_PROJECT: ${{ secrets.GEMINI_AI_PROJECT }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -147,7 +146,7 @@ jobs:
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             if [ "${{ github.event.pull_request.head.repo.fork }}" = "true" ] || [ "${{ github.secret_source }}" = "Dependabot" ]; then
               echo "::warning::Fork/Dependabot PR — unsetting all provider credentials"
-              { echo "VERTEX_AI_PROJECT="; echo "GCP_WORKLOAD_IDENTITY_PROVIDER="; echo "GCP_GEMINI_SERVICE_ACCOUNT="; echo "OPENAI_API_KEY="; echo "GEMINI_API_KEY="; echo "ENABLE_GEMINI="; } >> "$GITHUB_ENV"
+              { echo "VERTEX_AI_PROJECT="; echo "GCP_WORKLOAD_IDENTITY_PROVIDER="; echo "OPENAI_API_KEY="; echo "GEMINI_API_KEY="; echo "ENABLE_GEMINI="; } >> "$GITHUB_ENV"
               exit 0
             fi
           fi
@@ -166,7 +165,7 @@ jobs:
           fi
 
           # Gemini: prefer Bearer token via WIF, fall back to API key
-          if [ -n "$GCP_GEMINI_SERVICE_ACCOUNT" ] && [ -n "$GCP_WORKLOAD_IDENTITY_PROVIDER" ]; then
+          if [ -n "$GEMINI_AI_PROJECT" ] && [ -n "$GCP_WORKLOAD_IDENTITY_PROVIDER" ]; then
             echo "Gemini: will attempt Bearer token auth via WIF"
             echo "USE_GEMINI_BEARER=true" >> "$GITHUB_ENV"
           elif [ -n "$GEMINI_API_KEY" ]; then
@@ -229,7 +228,6 @@ jobs:
         with:
           project_id: ${{ env.GEMINI_AI_PROJECT }}
           workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ env.GCP_GEMINI_SERVICE_ACCOUNT }}
           token_format: 'access_token'
 
       - name: Configure Gemini auth
