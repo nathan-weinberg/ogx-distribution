@@ -47,7 +47,7 @@ jobs:
       - name: Resolve models
         id: models
         run: |
-          default='["gemini/models/gemini-2.5-flash"]'
+          default='["gemini/models/gemini-3.5-flash"]'
           input='${{ inputs.models }}'
           if [ -z "$input" ]; then
             echo "json=$default" >> "$GITHUB_OUTPUT"
