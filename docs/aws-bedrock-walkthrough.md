@@ -11,6 +11,18 @@
    export AWS_BEDROCK_BEARER_TOKEN=bedrock-api-key-ABCdef123...
    ```
 
+# Using AWS IAM role authentication
+
+For Kubernetes deployments that use IRSA or pod identity, enable the provider and set the role inputs instead of a bearer token:
+
+```shell
+export ENABLE_BEDROCK=1
+export AWS_ROLE_ARN=arn:aws:iam::123456789012:role/bedrock-inference-role
+export AWS_WEB_IDENTITY_TOKEN_FILE=/var/run/secrets/eks.amazonaws.com/serviceaccount/token
+```
+
+The Bedrock provider uses STS AssumeRoleWithWebIdentity to obtain temporary credentials from the configured role and token file.
+
 # OpenAI API compatibility
 
 You can use your bearer token with AWS Bedrock's OpenAI chat completions API ([docs](https://docs.aws.amazon.com/bedrock/latest/userguide/inference-chat-completions.html)). As of October 2025, AWS **only supports this API with `openai.gpt-oss` models, which are only available in `us-west-2`**. AWS may change this in the future.
