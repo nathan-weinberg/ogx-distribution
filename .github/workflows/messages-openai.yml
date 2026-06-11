@@ -1,4 +1,4 @@
-name: "Responses: OpenAI"
+name: "Messages: OpenAI"
 
 on:
   workflow_call:
@@ -22,8 +22,10 @@ on:
 
 env:
   PROVIDER_NAME: openai
-  EMBEDDING_MODEL: openai/text-embedding-3-small
   IMAGE_NAME: quay.io/opendatahub/odh-ogx-core
+  # Pin to a published image. This must point at an image built AFTER the
+  # Messages API was enabled in build.yaml, otherwise /v1/messages 404s.
+  # Bump alongside responses-openai.yml's pin.
   IMAGE_TAG: ${{ inputs.image_tag || 'source-b5c18de28794baaf537b2683271a5043ccd42426-6515a120edf38a477a55b037e745752f2535661c' }}
 
 jobs:
@@ -66,7 +68,6 @@ jobs:
         model: ${{ fromJson(needs.check.outputs.models_json) }}
     permissions:
       contents: read
-      checks: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -76,6 +77,11 @@ jobs:
         with:
           python-version: 3.12
           enable-cache: false
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
 
       - name: Setup PostgreSQL
         uses: ./.github/actions/setup-postgres
@@ -87,68 +93,35 @@ jobs:
           image_tag: ${{ env.IMAGE_TAG }}
           extra_env: |
             OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-            TAVILY_SEARCH_API_KEY=${{ secrets.TAVILY_SEARCH_API_KEY }}
-            EMBEDDING_MODEL=openai/text-embedding-3-small
-            EMBEDDING_PROVIDER=openai
-            EMBEDDING_PROVIDER_MODEL_ID=text-embedding-3-small
 
-      - name: Clone upstream tests
+      # ── Path 1: basic Messages API request (/v1/messages) ──────────────
+      - name: Messages API basic smoke
+        id: messages_basic
+        shell: bash
+        env:
+          MESSAGES_SMOKE_ONLY: 'true'
+          MESSAGES_SMOKE_MODEL: ${{ matrix.model }}
+        run: ./tests/smoke.sh
+
+      # ── Path 2: Claude Agent SDK session (3-turn) ──────────────────────
+      - name: Install Claude Agent SDK
         shell: bash
         run: |
-          git clone --depth 1 https://github.com/ogx-ai/ogx.git /tmp/ogx-tests
-          cd /tmp/ogx-tests
-          git fetch --depth 1 origin 9769a91c543e527389707e8a342339528d23c9f5 # v1.0.0
-          git checkout 9769a91c543e527389707e8a342339528d23c9f5
-
+          npm install -g @anthropic-ai/claude-code
           uv venv --clear
           source .venv/bin/activate
-          uv pip install -e . ogx-client ollama pytest langchain-openai langgraph
+          uv pip install claude-agent-sdk anyio
 
-      - name: Derive short model name
-        id: model
-        env:
-          FULL_MODEL: ${{ matrix.model }}
-        run: |
-          echo "short=${FULL_MODEL##*/}" >> "$GITHUB_OUTPUT"
-
-      - name: Run responses tests
+      - name: Claude Agent SDK session
+        id: agent_sdk
         shell: bash
         env:
-          MODEL: ${{ matrix.model }}
-          SHORT: ${{ steps.model.outputs.short }}
+          ANTHROPIC_BASE_URL: http://127.0.0.1:8321
+          ANTHROPIC_API_KEY: fake
+          MESSAGES_AGENT_MODEL: ${{ matrix.model }}
         run: |
-          cd /tmp/ogx-tests
           source .venv/bin/activate
-          mkdir -p /tmp/test-results
-
-          SKIP_TESTS="test_response_connector_resolution_mcp_tool"
-
-          python -m pytest -s -v tests/integration/responses/ \
-            -k "not ($SKIP_TESTS)" \
-            --stack-config=server:"$GITHUB_WORKSPACE/distribution/config.yaml" \
-            --text-model="$MODEL" \
-            --embedding-model="$EMBEDDING_MODEL" \
-            --inference-mode=live \
-            --junit-xml="/tmp/test-results/results_${PROVIDER_NAME}_${SHORT}.xml" \
-            || [ $? -eq 5 ]
-
-      - name: Publish test report
-        if: ${{ !cancelled() }}
-        continue-on-error: true
-        uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3.0.0
-        with:
-          name: "${{ env.PROVIDER_NAME }}/${{ steps.model.outputs.short }}"
-          path: /tmp/test-results/*.xml
-          reporter: java-junit
-          fail-on-error: 'false'
-
-      - name: Upload artifacts
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: responses-${{ env.PROVIDER_NAME }}-${{ steps.model.outputs.short }}
-          path: /tmp/test-results/
-          retention-days: 90
+          python tests/messages_agent_sdk.py
 
       - name: Cleanup
         if: ${{ !cancelled() }}
