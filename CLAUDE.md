@@ -74,28 +74,9 @@ The OGX version is set in `build/build.env` (`OGX_VERSION`). The build script (`
 
 ## PR Title Format
 
-PR titles **must** follow the [Conventional Commits](https://www.conventionalcommits.org/) format. This is enforced by the `semantic-pr.yml` CI check (uses `amannn/action-semantic-pull-request`). PRs with non-conforming titles will fail CI.
+PR titles must use [Conventional Commits](https://www.conventionalcommits.org/) format (`<type>(<optional scope>): <description>`), enforced by `semantic-pr.yml`.
 
-Format: `<type>(<optional scope>): <description>`
-
-Common type prefixes used in this repo:
-
-- `build:` — build system, dependencies, container image changes
-- `chore:` — maintenance, dependency updates, non-functional changes
-- `ci:` — CI/CD workflow changes
-- `docs:` — documentation-only changes
-- `feat:` — new feature or capability
-- `fix:` — bug fix
-- `refactor:` — code restructuring without behavior change
-- `revert:` — revert a previous commit or PR
-- `test:` — adding or updating tests
-
-Examples of valid PR titles:
-
-- `feat: add Anthropic provider to CI tests`
-- `fix: run vLLM CPU image as non-root`
-- `chore(github-deps): bump actions/checkout from 6.0.2 to 6.0.3`
-- `docs: update CLAUDE.md with PR guidelines`
+Allowed types: `build`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`, `refactor`, `revert`, `style`, `test`.
 
 ## Important Notes
 
