@@ -72,6 +72,29 @@ The OGX version is set in `build/build.env` (`OGX_VERSION`). The build script (`
 - **Tekton** (`.tekton/`) — Konflux/RHOAI downstream build pipelines.
 - **`create-or-update-release-branch.yml`** — creates/updates `release-*` release branches.
 
+## PR Title Format
+
+PR titles **must** follow the [Conventional Commits](https://www.conventionalcommits.org/) format. This is enforced by the `semantic-pr.yml` CI check (uses `amannn/action-semantic-pull-request`). PRs with non-conforming titles will fail CI.
+
+Format: `<type>(<optional scope>): <description>`
+
+Common type prefixes used in this repo:
+
+- `feat:` — new feature or capability
+- `fix:` — bug fix
+- `chore:` — maintenance, dependency updates, non-functional changes
+- `docs:` — documentation-only changes
+- `ci:` — CI/CD workflow changes
+- `refactor:` — code restructuring without behavior change
+- `test:` — adding or updating tests
+
+Examples of valid PR titles:
+
+- `feat: add Anthropic provider to CI tests`
+- `fix: run vLLM CPU image as non-root`
+- `chore(github-deps): bump actions/checkout from 6.0.2 to 6.0.3`
+- `docs: update CLAUDE.md with PR guidelines`
+
 ## Important Notes
 
 - Python version: 3.12
