@@ -19,10 +19,12 @@ copy_files() {
 
 copy_tiktoken() {
     local cache_dir="${APP_ROOT}/.cache/tiktoken"
+    local url="https://openaipublic.blob.core.windows.net/encodings/cl100k_base.tiktoken"
+    # tiktoken uses the SHA-1 of the download URL as the cache filename
+    local cache_key
+    cache_key=$(printf '%s' "${url}" | sha1sum | cut -d' ' -f1)
     mkdir -p "${cache_dir}"
-    # Filename in the cache is the SHA-1 of the download URL
-    cp "${ARTIFACTS_DIR}/tiktoken/cl100k_base.tiktoken" \
-       "${cache_dir}/9b5ad71b2ce5302211f9c61530b329a4922fc6a4"
+    cp "${ARTIFACTS_DIR}/tiktoken/cl100k_base.tiktoken" "${cache_dir}/${cache_key}"
 }
 
 copy_granite_embedding() {
