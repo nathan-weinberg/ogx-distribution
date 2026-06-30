@@ -1,8 +1,8 @@
 # /// script
 # requires-python = ">=3.12"
 # dependencies = [
-#   "httpx",
-#   "pyyaml",
+#   "httpx>=0.28,<1",
+#   "pyyaml>=6,<7",
 # ]
 # ///
 """Download artifacts defined in artifacts.lock.yaml with checksum verification."""
@@ -53,6 +53,16 @@ async def main(lock_file: Path, output_dir: Path) -> None:
 
     artifacts = lock["artifacts"]
     print(f"Fetching {len(artifacts)} artifacts to {output_dir}")
+
+    # Reject absolute paths and traversal attempts in artifact filenames.
+    resolved_output = output_dir.resolve()
+    for a in artifacts:
+        filename = a["filename"]
+        if Path(filename).is_absolute() or ".." in Path(filename).parts:
+            raise ValueError(f"Invalid artifact filename: {filename}")
+        dest = (output_dir / filename).resolve()
+        if not dest.is_relative_to(resolved_output):
+            raise ValueError(f"Artifact path escapes output dir: {filename}")
 
     semaphore = asyncio.Semaphore(MAX_CONCURRENT_DOWNLOADS)
     async with httpx.AsyncClient(timeout=DOWNLOAD_TIMEOUT_S) as client:
