@@ -18,8 +18,17 @@ else
     exit 1
 fi
 
+# Forward any build.env variables that are set as env vars in the host environment.
+env_flags=()
+while IFS='=' read -r key _; do
+    if [[ -n "$key" && ! "$key" =~ ^# && -n "${!key:-}" ]]; then
+        env_flags+=(-e "$key")
+    fi
+done < "$REPO_ROOT/build/build.env"
+
 exec "$runtime" run --rm \
     "$user_flag" \
+    "${env_flags[@]}" \
     -v "$REPO_ROOT:/workspace:z" \
     -w /workspace \
     "$IMAGE" \
