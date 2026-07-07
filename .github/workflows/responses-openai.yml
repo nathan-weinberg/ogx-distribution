@@ -148,22 +148,8 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           TAVILY_SEARCH_API_KEY: ${{ secrets.TAVILY_SEARCH_API_KEY }}
         run: |
-          # Scrub secret values before upload (CWE-532)
-          python3 -c "
-          import os, glob
-          secrets = [os.environ.get(v, '') for v in [
-              'OPENAI_API_KEY',
-              'TAVILY_SEARCH_API_KEY',
-          ]]
-          secrets = [s for s in secrets if len(s) >= 4]
-          for f in glob.glob('/tmp/test-results/*'):
-              with open(f, 'r', errors='replace') as fh:
-                  content = fh.read()
-              for s in secrets:
-                  content = content.replace(s, '***REDACTED***')
-              with open(f, 'w') as fh:
-                  fh.write(content)
-          "
+          ./tests/scrub_secrets.sh '/tmp/test-results/*' \
+            OPENAI_API_KEY TAVILY_SEARCH_API_KEY
 
       - name: Upload artifacts
         if: ${{ !cancelled() }}

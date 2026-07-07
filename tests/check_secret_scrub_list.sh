@@ -20,9 +20,9 @@ if [ -z "$smoke_secrets" ]; then
   exit 1
 fi
 
-# Extract the var names from the workflow's scrub list
-scrub_vars=$(grep -oP "'[A-Z_]+'" "$WORKFLOW" \
-  | tr -d "'" \
+# Extract the var names from the workflow's scrub_secrets.sh invocation
+scrub_vars=$(grep -A10 'scrub_secrets\.sh' "$WORKFLOW" \
+  | grep -oP '\b[A-Z][A-Z_]{2,}\b' \
   | grep -E "$secret_pattern" \
   | sort -u)
 
