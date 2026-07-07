@@ -28,6 +28,12 @@ async def download_artifact(
     semaphore: asyncio.Semaphore,
 ) -> None:
     async with semaphore:
+        if dest.exists():
+            sha = hashlib.sha256(dest.read_bytes()).hexdigest()
+            if sha == expected_sha256:
+                print(f"Skipping {dest.name} (cached)")
+                return
+
         dest.parent.mkdir(parents=True, exist_ok=True)
         tmp = dest.with_suffix(dest.suffix + ".tmp")
         print(f"Downloading {dest.name}...")
@@ -78,7 +84,7 @@ async def main(lock_file: Path, output_dir: Path) -> None:
         ]
         await asyncio.gather(*tasks)
 
-    print("All artifacts downloaded and verified.")
+    print("All artifacts verified.")
 
 
 if __name__ == "__main__":
