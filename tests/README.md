@@ -192,7 +192,7 @@ Runs on all pull requests and pushes to `main`. Executes the full pre-commit hoo
 - **Shellcheck** - Shell script linting
 - **Actionlint** - GitHub Actions workflow linting
 - **Standard hooks** - merge conflict detection, trailing whitespace, large file checks, YAML/JSON/TOML validation, executable shebangs, private key detection, mixed line endings
-- **Distribution Build** (`build/build.py`) - Regenerates `distribution/config.yaml` and `distribution/requirements.txt`
+- **Distribution Build** (`build/build.py`) - Regenerates `distribution/config.yaml` and `distribution/requirements-lock.txt`
 - **Distribution Documentation** (`build/gen_distro_docs.py`) - Regenerates `distribution/README.md`
 
 ### Semantic PR Titles (`semantic-pr.yml`)
