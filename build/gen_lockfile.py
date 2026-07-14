@@ -190,12 +190,7 @@ def _get_dependencies(ogx_bin: Path) -> list[str]:
 
 def _get_opentelemetry_packages(bootstrap_bin: Path) -> list[str]:
     """Run opentelemetry-bootstrap to discover instrumentation packages."""
-    result = subprocess.run(
-        [str(bootstrap_bin), "-a", "requirements"],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
+    result = _run([str(bootstrap_bin), "-a", "requirements"])
     packages = []
     for line in result.stdout.splitlines():
         line = line.strip()
