@@ -7,7 +7,12 @@ inputs:
     required: true
   image_tag:
     description: 'Container image tag'
-    required: true
+    required: false
+    default: ''
+  image_ref:
+    description: 'Complete container image reference; overrides image_name and image_tag'
+    required: false
+    default: ''
   extra_env:
     description: 'Extra env vars for docker run (one KEY=VALUE per line)'
     required: false
@@ -25,10 +30,12 @@ runs:
       env:
         IMAGE_NAME: ${{ inputs.image_name }}
         IMAGE_TAG: ${{ inputs.image_tag }}
+        IMAGE_REF: ${{ inputs.image_ref }}
         INPUT_EXTRA_ENV: ${{ inputs.extra_env }}
         INPUT_VOLUMES: ${{ inputs.volumes }}
       run: |
-        docker pull "$IMAGE_NAME:$IMAGE_TAG"
+        image_ref="${IMAGE_REF:-$IMAGE_NAME:$IMAGE_TAG}"
+        docker pull "$image_ref"
 
         docker_args=(
           -d --net=host --name ogx
@@ -64,7 +71,7 @@ runs:
           docker_args+=(--volume "$line")
         done <<< "$INPUT_VOLUMES"
 
-        docker_args+=("$IMAGE_NAME:$IMAGE_TAG")
+        docker_args+=("$image_ref")
 
         docker run "${docker_args[@]}"
 

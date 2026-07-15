@@ -22,10 +22,10 @@ on:
         required: false
   workflow_dispatch:
     inputs:
-      image_tag:
-        description: 'Image tag to test (default: latest)'
+      image_digest:
+        description: 'Image digest to test'
         required: false
-        default: 'latest'
+        default: 'sha256:d367cb4be5da1028f90a962ea24d9804c8ea35d6463488c7741196bd948b3bbc'
         type: string
       models:
         description: 'Comma-separated model IDs to test (default: TEST_MODELS_BEDROCK)'
@@ -40,7 +40,7 @@ env:
   PROVIDER_NAME: bedrock
   EMBEDDING_MODEL: sentence-transformers/all-MiniLM-L6-v2
   IMAGE_NAME: quay.io/opendatahub/odh-ogx-core
-  IMAGE_TAG: ${{ inputs.image_tag || 'source-b5c18de28794baaf537b2683271a5043ccd42426-6515a120edf38a477a55b037e745752f2535661c' }}
+  IMAGE_REF: quay.io/opendatahub/odh-ogx-core@${{ inputs.image_digest || 'sha256:d367cb4be5da1028f90a962ea24d9804c8ea35d6463488c7741196bd948b3bbc' }}
 
 jobs:
   check:
@@ -136,8 +136,8 @@ jobs:
         env:
           MODEL: ${{ matrix.model }}
         run: |
-          docker pull "$IMAGE_NAME:$IMAGE_TAG"
-          docker create --name ogx-cfg "$IMAGE_NAME:$IMAGE_TAG" true > /dev/null
+          docker pull "$IMAGE_REF"
+          docker create --name ogx-cfg "$IMAGE_REF" true > /dev/null
           docker cp ogx-cfg:/opt/app-root/config.yaml /tmp/config-patched.yaml
           docker rm ogx-cfg > /dev/null
           python3 - <<'PY'
@@ -181,7 +181,7 @@ jobs:
         uses: ./.github/actions/setup-server
         with:
           image_name: ${{ env.IMAGE_NAME }}
-          image_tag: ${{ env.IMAGE_TAG }}
+          image_ref: ${{ env.IMAGE_REF }}
           volumes: |
             /tmp/config-patched.yaml:/opt/app-root/config-patched.yaml:ro
           extra_env: |
