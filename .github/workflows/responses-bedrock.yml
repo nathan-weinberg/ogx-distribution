@@ -131,7 +131,7 @@ jobs:
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
           role-session-name: GitHubActions-Bedrock-${{ github.run_id }}
 
-      - name: Patch config for Bedrock models
+      - name: Patch config for Bedrock tests
         shell: bash
         env:
           MODEL: ${{ matrix.model }}
@@ -148,6 +148,19 @@ jobs:
           model = os.environ["MODEL"]
           cfg = yaml.safe_load(open('/tmp/config-patched.yaml'))
           inference_providers = cfg.setdefault('providers', {}).setdefault('inference', [])
+          bedrock_provider = next(
+              (p for p in inference_providers if p.get('provider_type') == 'remote::bedrock'),
+              None,
+          )
+          if bedrock_provider is None:
+              inference_providers.append({
+                  'provider_id': 'bedrock',
+                  'provider_type': 'remote::bedrock',
+                  'config': {'region_name': os.environ['AWS_DEFAULT_REGION']},
+              })
+          else:
+              bedrock_provider['provider_id'] = 'bedrock'
+              bedrock_provider.setdefault('config', {})['region_name'] = os.environ['AWS_DEFAULT_REGION']
           if not any(p.get('provider_id') == 'sentence-transformers' for p in inference_providers):
               inference_providers.append({
                   'provider_id': 'sentence-transformers',
@@ -172,7 +185,6 @@ jobs:
           volumes: |
             /tmp/config-patched.yaml:/opt/app-root/config-patched.yaml:ro
           extra_env: |
-            ENABLE_BEDROCK=1
             AWS_ACCESS_KEY_ID=${{ env.AWS_ACCESS_KEY_ID }}
             AWS_SECRET_ACCESS_KEY=${{ env.AWS_SECRET_ACCESS_KEY }}
             AWS_SESSION_TOKEN=${{ env.AWS_SESSION_TOKEN }}
