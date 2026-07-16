@@ -8,14 +8,14 @@ on:
 permissions: {}
 
 concurrency:
-  group: ${{ github.workflow }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   update-lockfiles:
     runs-on: ubuntu-latest
     env:
-      BRANCH: automated/update-lockfiles
+      BRANCH: automated/update-lockfiles-${{ github.ref_name }}
       WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
     steps:
       - name: Checkout repository
@@ -108,7 +108,7 @@ jobs:
               --title "chore: update dependency lockfiles" \
               --body "$BODY" \
               --head "$BRANCH" \
-              --base main
+              --base "${{ github.ref_name }}"
           fi
 
       - name: Notify Slack on failure
