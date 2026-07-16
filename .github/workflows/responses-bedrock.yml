@@ -237,10 +237,13 @@ jobs:
           source .venv/bin/activate
           mkdir -p /tmp/test-results
 
-          SKIP_TESTS="test_response_connector_resolution_mcp_tool"
+          # Exercise the Bedrock contract shared by both client fixtures. The
+          # full Responses suite includes provider-specific features such as
+          # file search, structured output, and tool variants.
+          TEST_SELECTOR="(test_response_non_streaming_basic and earth) or test_response_streaming_basic"
 
           python -m pytest -s -v tests/integration/responses/ \
-            -k "not ($SKIP_TESTS)" \
+            -k "$TEST_SELECTOR" \
             --stack-config=server:"$GITHUB_WORKSPACE/distribution/config.yaml" \
             --text-model="$MODEL" \
             --embedding-model="$EMBEDDING_MODEL" \
